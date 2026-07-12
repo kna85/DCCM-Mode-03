@@ -1107,6 +1107,13 @@ function setProg(p){
   g("ai-progbar").style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + "%";
 }
 function baseId(id){ return id.replace(/-q4f(16|32)_1-MLC$/, ""); }
+function friendlyLoadError(e){
+  const m = (e && e.message ? e.message : String(e));
+  if (/cachestorage|cache storage|on 'cache/i.test(m)) {
+    return "Load failed — browser storage error. Fix: (1) click the padlock in the address bar \u2192 Site settings \u2192 Delete data, or open DevTools \u2192 Application \u2192 Storage \u2192 Clear site data, then reload. (2) Make sure you are NOT in Incognito/Guest mode. (3) Check you have a few GB of free disk space. Then press Load model again. (" + m + ")";
+  }
+  return "Load failed: " + m;
+}
 function fallbackId(id){ return id.indexOf("q4f16_1") >= 0 ? id.replace("q4f16_1", "q4f32_1") : null; }
 
 /* Suggested ICD-10 codes for the AI summary — produced by the curated, deterministic
@@ -1136,7 +1143,11 @@ function groundedCodesBlock(text){
 
 async function loadModel(model){
   if (!engine) {
-    engine = new webllm.MLCEngine();
+    // Some Chrome/Edge setups throw "Failed to execute 'open' on 'CacheStorage'"
+    // when WebLLM stores model weights via the Cache API. Caching the weights in
+    // IndexedDB instead avoids that failing CacheStorage path.
+    const appConfig = { ...webllm.prebuiltAppConfig, useIndexedDBCache: true };
+    engine = new webllm.MLCEngine({ appConfig });
     engine.setInitProgressCallback(r => {
       if (typeof r.progress === "number") setProg(r.progress);
       if (r.text) setStatus(r.text);
@@ -1170,7 +1181,7 @@ g("ai-load").onclick = async () => {
     setStatus("Model ready — running locally on this device (" + loadedModel + ").");
     g("ai-gen").disabled = false;
   } catch (e) {
-    setStatus("Load failed: " + (e && e.message ? e.message : e));
+    setStatus(friendlyLoadError(e));
   } finally {
     busy = false; g("ai-load").disabled = false;
   }
