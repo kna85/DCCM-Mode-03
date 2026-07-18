@@ -92,6 +92,9 @@
   .panes{display:flex;gap:12px;flex-wrap:wrap;}
   .pane{flex:1 1 220px;display:flex;flex-direction:column;min-width:0;}
   .pane-h{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim);font-weight:700;margin-bottom:6px;}
+  .res-cols{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;}
+  .res-col{flex:1 1 320px;min-width:0;}
+  @media (max-width:760px){ .res-cols{flex-direction:column;} }
   .riskbar{border:1px solid var(--accent);border-radius:var(--radius);background:var(--panel-2);padding:12px 14px;margin-top:18px;}
   .riskbar-row{display:flex;gap:14px;flex-wrap:wrap;}
   .riskcell{flex:1 1 160px;display:flex;flex-direction:column;gap:4px;}
@@ -953,8 +956,8 @@ function buildSummary(){
   const tailWords=tailText?tailText.split(/\s+/).length:0;
   let budget=500 - tailWords - 3; if(budget<40) budget=40;
   const narr=[];
-  if(hx) narr.push("History of presenting illness: "+hx);
   if(sr) narr.push("Senior review: "+sr);
+  if(hx) narr.push("History of presenting illness: "+hx);
   if(ex) narr.push("Additional information: "+ex);
   let narrText=capWords(narr.join("\n\n"),budget);
   let text=["CLINICAL SUMMARY",narrText,tailText].filter(Boolean).join("\n\n");
@@ -997,8 +1000,12 @@ function generate(){
       </div>
     </label>`;
   let html="";
-  if(strong.length){ html+=`<div class="section-h">Suggested codes <span class="pill">${strong.length}</span></div>`+strong.map(r=>rowHtml(r,true)).join(""); }
-  if(maybe.length){ html+=`<div class="section-h">Possible — review <span class="pill">${maybe.length}</span></div>`+maybe.map(r=>rowHtml(r,false)).join(""); }
+  if(strong.length || maybe.length){
+    html+=`<div class="res-cols">`;
+    if(strong.length) html+=`<div class="res-col"><div class="section-h">Suggested codes <span class="pill">${strong.length}</span></div>${strong.map(r=>rowHtml(r,true)).join("")}</div>`;
+    if(maybe.length) html+=`<div class="res-col"><div class="section-h">Possible — review <span class="pill">${maybe.length}</span></div>${maybe.map(r=>rowHtml(r,false)).join("")}</div>`;
+    html+=`</div>`;
+  }
   if(negated.length){ html+=`<div class="section-h">Mentioned but negated — not selected <span class="pill">${negated.length}</span></div>`+negated.map(r=>rowHtml(r,false,"neg")).join(""); }
   html+=`
     <div class="toolbar" style="margin-top:18px">
@@ -1188,7 +1195,7 @@ g("ai-load").onclick = async () => {
 };
 
 g("ai-fromcoder").onclick = () => {
-  const parts = ["inHx", "inSenior", "inExtra"].map(id => { const el = g(id); return el ? el.value.trim() : ""; }).filter(Boolean);
+  const parts = ["inSenior", "inHx", "inExtra"].map(id => { const el = g(id); return el ? el.value.trim() : ""; }).filter(Boolean);
   if (parts.length) { g("ai-input").value = parts.join("\n\n"); setStatus("Pulled text from the Coder tab."); }
   else setStatus("The Coder tab is empty.");
 };
