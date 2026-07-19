@@ -67,6 +67,12 @@
   #search { flex:1; min-width:200px; background:var(--panel); border:1px solid var(--line);
     border-radius:var(--radius); color:var(--ink); padding:10px 14px; font-size:15px; outline:none; }
   #search:focus { border-color:var(--accent-dim); }
+  .fb-form { max-width:640px; margin-top:16px; }
+  .fb-form .pane-h { display:block; margin:14px 0 6px; }
+  .fb-form input { width:100%; background:var(--panel); border:1px solid var(--line);
+    border-radius:var(--radius); color:var(--ink); padding:10px 14px; font-size:15px; outline:none; }
+  .fb-form input:focus { border-color:var(--accent-dim); }
+  .fb-form textarea { min-height:120px; }
   .filters { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
   .chip { background:var(--panel); border:1px solid var(--line); color:var(--ink-dim);
     padding:6px 12px; border-radius:99px; font-size:12px; cursor:pointer; user-select:none; }
@@ -235,11 +241,24 @@
   <!-- ══════════════ FEEDBACK TAB ══════════════ -->
   <section id="tab-feedback" class="hidden">
     <div class="ai-note">
-      <strong>We'd love your feedback.</strong> Spotted a wrong code, a missing diagnosis, or have a suggestion? Send it straight to the maintainer &mdash; it opens in your email app.
+      <strong>We'd love your feedback.</strong> Spotted a wrong code, a missing diagnosis, or have a suggestion? Send it below and it goes straight to the maintainer's inbox &mdash; no email app needed. This form submits over the network to a third-party delivery service (Web3Forms); don't include patient identifiers.
     </div>
-    <div class="toolbar" style="margin-top:14px">
-      <a class="btn btn-primary" href="mailto:alamiri.k@gmail.com?subject=ICU%20ICD-10%20Coder%20feedback">Email feedback</a>
-    </div>
+
+    <form id="fbForm" class="fb-form">
+      <label class="pane-h" for="fbEmail">Your email</label>
+      <input id="fbEmail" name="email" type="email" required placeholder="you@example.com" autocomplete="email">
+
+      <label class="pane-h" for="fbSubject">Subject</label>
+      <input id="fbSubject" name="subject" type="text" required placeholder="e.g. Wrong code for septic shock" value="ICU ICD-10 Coder feedback">
+
+      <label class="pane-h" for="fbMessage">Context / message</label>
+      <textarea id="fbMessage" name="message" required placeholder="Describe the issue or suggestion in as much detail as you like."></textarea>
+
+      <div class="toolbar" style="margin-top:12px">
+        <button class="btn btn-primary" type="submit" id="fbSend">Send feedback</button>
+        <span class="hint" id="fbStatus"></span>
+      </div>
+    </form>
   </section>
 </main>
 
@@ -1093,6 +1112,46 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   $("tab-ai").classList.toggle("hidden",tab!=="ai");
   $("tab-feedback").classList.toggle("hidden",tab!=="feedback");
   if(tab==="ref") renderRef();
+});
+
+/* Feedback form — delivers via Web3Forms (https://web3forms.com).
+   The access key below is tied to kfshcodeproject@gmail.com,
+   which is where submissions arrive. */
+const WEB3FORMS_ACCESS_KEY = "99862810-4e2b-4242-a1dc-2fecf5ce2e1e";
+$("fbForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = $("fbSend"), status = $("fbStatus");
+  if (WEB3FORMS_ACCESS_KEY === "YOUR_WEB3FORMS_ACCESS_KEY") {
+    status.textContent = "Not configured yet — add your Web3Forms access key.";
+    return;
+  }
+  btn.disabled = true; status.textContent = "Sending…";
+  const payload = {
+    access_key: WEB3FORMS_ACCESS_KEY,
+    email: $("fbEmail").value,
+    subject: $("fbSubject").value,
+    message: $("fbMessage").value,
+    from_name: "ICU ICD-10 Coder feedback"
+  };
+  try {
+    const res = await fetch("https://api.web3forms.com/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      status.textContent = "Thanks — your feedback was sent.";
+      $("fbMessage").value = "";
+      toast("Feedback sent");
+    } else {
+      status.textContent = "Couldn't send: " + (data.message || "please try again.");
+    }
+  } catch (err) {
+    status.textContent = "Network error — please try again.";
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 /* Toast + init */
