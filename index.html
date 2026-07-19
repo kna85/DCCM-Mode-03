@@ -137,6 +137,7 @@
     <span class="tab active" data-tab="coder">Coder</span>
     <span class="tab" data-tab="ref">Reference list</span>
     <span class="tab" data-tab="ai">AI Summary</span>
+    <span class="tab" data-tab="feedback">Feedback</span>
   </div>
 </header>
 
@@ -228,6 +229,16 @@
 
     <div class="ai-disclaimer">
       &#9888; Draft only &mdash; not a source of truth. AI can miss or invent findings. A clinician must verify every summary against the original note before any clinical use. Do not paste real patient identifiers (name, MRN, DOB) during testing.
+    </div>
+  </section>
+
+  <!-- ══════════════ FEEDBACK TAB ══════════════ -->
+  <section id="tab-feedback" class="hidden">
+    <div class="ai-note">
+      <strong>We'd love your feedback.</strong> Spotted a wrong code, a missing diagnosis, or have a suggestion? Send it straight to the maintainer &mdash; it opens in your email app.
+    </div>
+    <div class="toolbar" style="margin-top:14px">
+      <a class="btn btn-primary" href="mailto:alamiri.k@gmail.com?subject=ICU%20ICD-10%20Coder%20feedback">Email feedback</a>
     </div>
   </section>
 </main>
@@ -1080,6 +1091,7 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   $("tab-coder").classList.toggle("hidden",tab!=="coder");
   $("tab-ref").classList.toggle("hidden",tab!=="ref");
   $("tab-ai").classList.toggle("hidden",tab!=="ai");
+  $("tab-feedback").classList.toggle("hidden",tab!=="feedback");
   if(tab==="ref") renderRef();
 });
 
